@@ -3,10 +3,10 @@ OO ALV Screen ,Fieldcatalog ve Internal tablo üçünü de kendimizin oluşturma
 
 İlk olarak include oluşturalım. 
 Include; 
-1.Veri tanımlanır, 
-2.PBO(Process before output),
-3.PAI(Process After Input)
-4.Class ,bilgilerini tutan dört tane include oluşturalım.
+* 1.Veri tanımlanır, 
+* 2.PBO(Process before output),
+* 3.PAI(Process After Input)
+* 4.Class ,bilgilerini tutan dört tane include oluşturalım.
 
 1.Include
 Select Option kullanacağımız tablo seçim yapmak için kullanalım. Select option kullanılacak olan tabloyu kullanabilmek için tables ile üst kısma yazmalıyız .Selection option dışına selection screen begin blok oluşturalım.
@@ -18,5 +18,5 @@ Class dan referans alınarak container oluşturulur.
 Ekrana basabilmek için class type referans alarak  oluşturalım. 
 
 Type begin of ile tip oluşturalım. Oluşturduğumuz bu tipi kullanarak internal tablo oluşturalım. 
-![image](https://github.com/sumeyyaakbulut/ABAP-OO-ALV/assets/62395974/49571c3e-14d5-449d-8bca-567c758c8769)
+
 
