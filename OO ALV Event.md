@@ -226,3 +226,71 @@ FORM DISPLAY_ALV .
     .
 ENDFORM.            
 ```
+
+### HOTSPOT 
+
+OO ALV Hotspot ile field yani tablodaki belirlediğimiz alana tıklama özelliği ekleriz bu sayede de bir tablodan başka tabloya veya farklı içeriklerin görünmesi sağlanır.
+
+CL Events içerisin de hotspot click için method tanımlayalım. İmporting kısmında ki girdileri  cl guı alv grid içerisinden bakılarak  event  hotspot parametrelerine bakılarak yapılır.
+
+```cadence
+METHODS handle_hotspot_click
+     FOR EVENT hotspot_click of CL_GUI_ALV_GRID
+       IMPORTING
+       E_ROW_ID
+       E_COLUMN_ID.
+```
+
+İnclude tanımlamamız aynı top of page de yaptığımız şekilde yapabiliriz .Biz bu örneğimiz de tablodaki carrid ve carrname kısımlarına hotspot özelliğini eklemek istiyorum.
+Set fcat form içerisin de merge altına aşağıdaki içeriği yazalım.
+Field symbol olarak tanımladığımız içerikte fieldname kısmı hotspot olmasını istediğimiz alanın ismini yazalım. Bu alanlar için hotspot özelliğini aktif edelim.
+
+```cadence
+LOOP AT GT_FCAT ASSIGNING <GFS_FCAT>.
+    IF <GFS_FCAT>-FIELDNAME EQ 'CARRID' OR
+       <GFS_FCAT>-FIELDNAME EQ 'CARRNAME'.
+      <GFS_FCAT>-HOTSPOT = ABAP_TRUE.
+          ENDIF.
+    ENDLOOP.
+```
+
+Display alv içerisine hotspot event eklemek için ;
+
+```cadence
+CREATE OBJECT GO_EVENT_RECEIVER.
+SET HANDLER GO_EVENT_RECEIVER->HANDLE_HOTSPOT_CLICK FOR GO_ALV.
+```
+
+Daha sonra diğer örnekteki gibi de set table for first display methodu kullanılır. Diğer örneklerdeki aynı şekil de kullanılır.
+
+Sonra da bizim tıklanabilir olarak yaptığımız sütunlara tıklanıldığı zaman ekrana bir mesaj yazmasını istiyoruz.
+Bu işlem için class defination kısmın da tanımladığımız hotspot işlevsellik kazandırmak için de implementation kısmında aşağıdaki şekilde yapalım.
+
+Mesajı ekrana basabilmek için bir değişken tanımlayalım.
+Read table ile internal tablomuzun içerisin de structure yardımı ile tıklanan alanın index  ile hangi satıra geldiğini bulup subrc 0 yani o satır hangi satır olduğunu bulduysa ,tıklanan sütunun fieldname hotspot özelliğini verdiğimiz sütun ismi ile aynı  olup olmadığına bakalım. Bu işlemi de case ile yapalım. Concatenate ile de istediğimiz içerikleri ekleyerek mesaj olarak ekrana yazalım.
+
+```cadence
+ METHOD handle_hotspot_click.
+    DATA : LV_MEES TYPE CHAR200.
+    READ TABLE GT_SCARR INTO GS_SCARR INDEX E_ROW_ID-INDEX.
+    IF SY-SUBRC EQ 0.
+      CASE E_COLUMN_ID-FIELDNAME.
+        WHEN 'CARRID'.
+          CONCATENATE 'Tıklanan Kolon' E_COLUMN_ID-FIELDNAME 'degeri'
+          GS_SCARR-CARRID INTO LV_MEES SEPARATED BY space.
+
+          MESSAGE LV_MEES TYPE 'I'.
+
+        WHEN 'CARRNAME'.
+          CONCATENATE 'Tıklanan Kolon' E_COLUMN_ID-FIELDNAME 'degeri'
+       GS_SCARR-CARRNAME INTO LV_MEES SEPARATED BY space.
+
+          MESSAGE LV_MEES TYPE 'I'.
+      ENDCASE.
+    ENDIF.
+  ENDMETHOD.
+```
+
+### DOUBLE CLICK
+OO ALV de ekrana basılan bir tablodan herhangi bir alanına tıklanınca ekrana yazmak istediğimiz içerik görünmesi  sağlanır. Bunun için event ler için ortak olan alanları diğer eventler yapılan içerikler aynı olduğu için orayı geçelim.
+Oluşturduğumuz class ismi yazıp sonra da o class daki method çağıralım ve cl guı alv grid den referans alarak oluşturduğumuz go alv çağıralım.
