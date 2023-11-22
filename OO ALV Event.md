@@ -294,3 +294,183 @@ Read table ile internal tablomuzun içerisin de structure yardımı ile tıklana
 ### DOUBLE CLICK
 OO ALV de ekrana basılan bir tablodan herhangi bir alanına tıklanınca ekrana yazmak istediğimiz içerik görünmesi  sağlanır. Bunun için event ler için ortak olan alanları diğer eventler yapılan içerikler aynı olduğu için orayı geçelim.
 Oluşturduğumuz class ismi yazıp sonra da o class daki method çağıralım ve cl guı alv grid den referans alarak oluşturduğumuz go alv çağıralım.
+
+```cadence
+CREATE OBJECT GO_EVENT_RECEIVER.
+   SET HANDLER GO_EVENT_RECEIVER->HANDLE_DOUBLE_CLICK FOR GO_ALV.
+
+```
+Kendi oluşturduğumuz class defination kısmında istediğimiz isimle oluşturarak cl gui alv grid den parametrelerine bakıp yazalım.
+
+```cadence
+METHODS handle_double_click
+  FOR EVENT double_click of CL_GUI_ALV_GRID
+    IMPORTING
+       E_ROW
+       E_COLUMN
+       ES_ROW_NO.
+```
+Oluşturduğumuz classın implementation kısmın da yukarıda oluşturduğumuz metoda işlevsellik kazandıralım .Ekrana mesaj basacağımız için bir değişken tanımlayalım. Read table ile tıklanan içeriğin hangi satırda olduğuna bakalım. Concatenate ile de ekrana yazmak istediğimiz içerikleri boşluklu bir şekilde mesaj olarak görünmesi sağlanır. Biz double click de tablonun tüm alanlarına uyguladığımız için bu içeriği case ile kontrol etmemiz gerekmez.
+
+```cadence
+ METHOD handle_double_click.
+    DATA LV_MESS2 TYPE CHAR200.
+
+    READ TABLE GT_SCARR INTO GS_SCARR INDEX E_ROW-INDEX.
+    IF sy-subrc EQ 0.
+      CONCATENATE 'Tıklanan kolon   ' E_COLUMN-FIELDNAME
+      ', structure ın degeri ,' GS_SCARR INTO LV_MESS2 SEPARATED BY space.
+      MESSAGE LV_MESS2 TYPE 'I'.
+    ENDIF.
+  ENDMETHOD .
+```
+
+### DATA CHANGED
+
+Oo ALV de ekrana basılan tabloda değiştirildikten sonra içeriği ve değiştirilmeden önceki içeriği bakılabilir.
+
+```cadence
+CREATE OBJECT GO_EVENT_RECEIVER.
+  SET HANDLER GO_EVENT_RECEIVER->HANDLE_DATA_CHANGED FOR GO_ALV.
+```
+ Diğer event lerde yaptığımız gibi set handle methodu ve go alv kullanılır.
+Oluşturduğumuz class içerisine data changed için method oluşturalum ve cl gui alv grid den bu içeriğin parametrelerini bulup yerleştirelim.
+
+```cadence
+METHODS handle_data_changed
+    FOR EVENT data_changed of CL_GUI_ALV_GRID
+    IMPORTING
+       ER_DATA_CHANGED
+       E_ONF4
+       E_ONF4_BEFORE
+       E_ONF4_AFTER
+       E_UCOMM.
+```
+
+Tanımladığımız class ın implementation kısmında aşağıdaki şekilde tanımlayalım.
+
+```cadence
+METHOD handle_data_changed.
+
+    DATA: LVC_M TYPE LVC_S_MODI,
+          LV_ME TYPE CHAR200.
+
+    LOOP AT ER_DATA_CHANGED->MT_GOOD_CELLS INTO LVC_M.
+      READ TABLE GT_SCARR INTO GS_SCARR INDEX LVC_M-ROW_ID.
+      IF SY-SUBRC EQ 0.
+        CASE LVC_M-FIELDNAME.
+          WHEN 'CURRCODE'.
+            CONCATENATE LVC_M-FIELDNAME
+                     'Eski degeri'
+                     GS_SCARR-CURRCODE
+                     'Yeni değeri'
+                     LVC_M-VALUE
+                     INTO LV_ME
+                     SEPARATED BY space.
+            MESSAGE LV_ME TYPE 'I'.
+          WHEN 'URL'.
+            CONCATENATE LVC_M-FIELDNAME
+                      'Eski degeri'
+                      GS_SCARR-URL
+                      'Yeni değeri'
+                      LVC_M-VALUE
+                      INTO LV_ME
+                      SEPARATED BY space.
+            MESSAGE LV_ME TYPE 'I'.
+        ENDCASE.
+
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+```
+
+### SEARCH HELP
+Tanımladığımız class da definition kısmı aşağıdaki şekilde yapılır. Burada ki importing içerikleri cl gui alv grid den search help parametreleridir.
+
+```cadence
+CREATE OBJECT GO_EVENT_RECEIVER.
+  SET HANDLER GO_EVENT_RECEIVER->HANDLE_ONF4 FOR GO_ALV.
+
+ METHODS handle_onf4
+        FOR EVENT onf4 of CL_GUI_ALV_GRID
+        IMPORTING
+       E_FIELDNAME
+       E_FIELDVALUE
+       ES_ROW_NO
+       ER_EVENT_DATA
+       ET_BAD_CELLS
+       E_DISPLAY.
+```
+Daha sonra da implementation kısmında aşağıdaki şekilde yazılır .Biz search help url sütununa ekleyeceğimiz için url data elementi yazılır.
+
+Lt_value tab search help de  içerisine yazdığımız ve ekranda açıldığında seçeceğimiz verilerin görünmesini sağlayan internal tablodur. Bu internal tablonun structure da oluşturalım.
+
+Lt return ile structure ve internal tablosu oluşturur .Bu tablonun içeriği  fieldname kısmı vardır bu kısım da ilk seçtiğimiz içerik  f0001 değerini verilir .Daha sonra da bu birer birer artarak devam eder. Bizim search help ekranında seçtiğimiz içerik ve f0001 li isim 
+
+Search help de görünmesini istediğimiz içerikleri  ls_value_tab  url sütununa  ekleyelim.
+Sonra da f4if fonksiyonu çağıralım. Retfield  de hangi sütun için kullanılacaksa onun ismi yazılır.
+Value Org kısmına da celll ve structure yazılabilir , biz örneğimiz de structure kullanacağımız için de S ile yazılır.
+ Sonra da read table ile return internal tablomuzun fieldname f0001 olan ve subrc 0 ise yani böyle bir değer bulduysa read table gt_scarr içeriği alv ilk açıldığında olan içerikleri yani search help ekranı açıldıktan sonra seçilen içerik değil scarr ilk hali yazılır.
+Daha sonra da scarr da oluşturduğumuz  yani seçtiğimiz değerin ekrana yazılması için  ls_return fieldval yani seach help de seçtiğimiz kısmını url sütuna atarız.
+Yaptığımız bu değişiklik sistem de değişse bile ekrana önceden alv basıldığı için bu alv refreshlemiz gerekmektedir.
+
+```cadence
+METHOD handle_onf4.
+
+    TYPES: BEGIN OF LTY_VALUE_TAB,
+      URL TYPE S_CARRURL,
+      END OF LTY_VALUE_TAB.
+
+    DATA: LT_VALUE_TAB TYPE TABLE OF LTY_VALUE_TAB,
+          LS_VALUE_TAB TYPE LTY_VALUE_TAB.
+
+    DATA: LT_RETURN_TAB TYPE TABLE OF DDSHRETVAL,
+          LS_RETURN_TAB TYPE  DDSHRETVAL.
+
+    CLEAR LS_VALUE_TAB.
+    LS_VALUE_TAB-URL = 'Türk hava yolları'.
+    APPEND LS_VALUE_TAB TO LT_VALUE_TAB.
+
+    CLEAR LS_VALUE_TAB.
+    LS_VALUE_TAB-URL = 'Anadolu Jet 2'.
+    APPEND LS_VALUE_TAB TO LT_VALUE_TAB.
+
+    CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
+      EXPORTING
+        RETFIELD     = 'URL'
+        WINDOW_TITLE = 'URL F4'
+        VALUE_ORG    = 'S'
+      TABLES
+        VALUE_TAB    = LT_VALUE_TAB
+        RETURN_TAB   = LT_RETURN_TAB.
+
+    READ TABLE LT_RETURN_TAB INTO LS_RETURN_TAB
+    WITH KEY FIELDNAME = 'F0001'.
+    IF SY-SUBRC EQ 0.
+      READ TABLE GT_SCARR ASSIGNING <GFS_SCARR> INDEX ES_ROW_NO-ROW_ID.
+      IF SY-SUBRC EQ 0.
+        <GFS_SCARR>-URL = LS_RETURN_TAB-FIELDVAL.
+        GO_ALV->REFRESH_TABLE_DISPLAY( ).
+      ENDIF.
+
+    ENDIF.
+
+    ER_EVENT_DATA->M_EVENT_HANDLED = 'X'.
+  ENDMETHOD.
+
+FORM REFISTER_F4 .
+  DATA :lt_f4 TYPE LVC_T_F4,
+        ls_f4 TYPE LVC_S_F4.
+
+CLEAR ls_f4.
+ls_f4-FIELDNAME = 'URL'.
+ls_f4-REGISTER = ABAP_TRUE.
+APPEND ls_f4 TO LT_F4.
+CALL METHOD GO_ALV->REGISTER_F4_FOR_FIELDS
+  exporting
+    IT_F4 = lt_f4
+  .
+ENDFORM.   
+
+```
