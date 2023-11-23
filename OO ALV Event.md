@@ -1,4 +1,4 @@
-## OO ALV Event.
+## OO ALV Event
 
 Eventler top of page , hotspot click , double click  , data changed , onf4 changed den oluşur. Bu içeriklerin hepsini sırayla bakalım.
 
